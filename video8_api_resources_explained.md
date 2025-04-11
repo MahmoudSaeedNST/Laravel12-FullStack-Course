@@ -1,5 +1,5 @@
 
-# 🎥 Video 8 – Introduction to API Resources & Collections (No Database Yet)
+# 🎥 Video 10 – API Resources & Collections (No Database Yet)
 
 ---
 
