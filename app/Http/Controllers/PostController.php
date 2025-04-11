@@ -3,42 +3,42 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PostRequest;
+use App\Http\Resources\PostResource;
+use App\Models\Post;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    public $posts = [
-        [
-            'id' => 1,
-            'title' => 'Post 1',
-            'content' => 'Content of post 1'
-        ],
-        [
-            'id' => 2,
-            'title' => 'Post 2',
-            'content' => 'Content of post 2'
-        ],
-        [
-            'id' => 3,
-            'title' => 'Post 3',
-            'content' => 'Content of post 3'
-        ],
-        [
-            'id' => 4,
-            'title' => 'Post 4',
-            'content' => 'Content of post 4'
-        ],
-    ];
+    public function addcomment(Request $request, string $id){
+        $data = $request->validate([
+            'content' => 'required|string',
+        ]);
+        $post = Post::find($id);
+        if (!$post) {
+            return response()->json([
+                'message' => 'Post not found',
+            ], 404);
+        }
+        $post->comments()->create([
+            'content' => $data['content']
+        ]);
+        return response()->json([
+            'message' => 'Comment added successfully',
+            'data' => $post->comments,
+        ]);
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
-        return response()->json([
-            'message' => 'List of posts',
-            'data' => $this->posts
-        ]);
+        $posts = Post::with('comments')->get();
+        return response()->json($posts);
+        /* return PostResource::collection($posts)->additional([
+            'message' => 'Get all posts',
+            'status' => 200
+        ]); */
     }
 
     /**
@@ -64,18 +64,19 @@ class PostController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        // []
-        $post = array_filter($this->posts, function ($filterdpost) use ($id){
-            return $filterdpost['id'] == $id;
-        });
-        return response()->json([
-            'message' => 'Post found',
-            'data' => array_values($post)
-        ]);
-    }
 
+
+    public function show()
+    {
+
+        $post = (object)[
+            'id' => 1,
+            'title' => 'Welcome to API Resources',
+            'content' => 'This is a static post used to demonstrate Laravel resources.'
+        ];
+
+        return new PostResource($post);
+    }
     /**
      * Update the specified resource in storage.
      */
@@ -83,7 +84,7 @@ class PostController extends Controller
     {
         // validation
         $data = $request->validated();
-        $selectedpost = array_filter($this->posts, function ($filterdpost) use ($id){
+        $selectedpost = array_filter($this->posts, function ($filterdpost) use ($id) {
             return $filterdpost['id'] == $id;
         });
         $post = array_values($selectedpost)[0];
@@ -100,7 +101,7 @@ class PostController extends Controller
      */
     public function destroy(string $id)
     {
-        $this->posts = array_filter($this->posts, function ($filterdpost) use ($id){
+        $this->posts = array_filter($this->posts, function ($filterdpost) use ($id) {
             return $filterdpost['id'] != $id; // ignore the post with the id
         });
         return response()->json([

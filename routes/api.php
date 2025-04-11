@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoleController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -110,7 +112,7 @@ Route::get('test-header', fn() => 'allowed')->middleware('custom_header');
 
 
 Route::middleware('auth:sanctum')->get('/profile', function (Request $request) {
-    return $request->user();
+    return $request->user()->profile();
 });
 
 Route::post('login', function(Request $request){
@@ -124,3 +126,10 @@ Route::middleware('throttle:custom')->get('limited' , function(){
 });
 
 Route::apiResource('posts', PostController::class);
+
+Route::get('user-profile', [ProfileController::class, 'index']);
+
+Route::post('posts/{id}/comments', [PostController::class, 'addcomment']);
+
+Route::post('users/{id}/roles', [RoleController::class, 'store']);
+Route::get('roles', [RoleController::class, 'index']);

@@ -13,6 +13,7 @@ class PostSeeder extends Seeder
      */
     public function run(): void
     {
-        Post::factory()->count(10)->create();
+        // call the PostFactory to seed the posts table
+        Post::factory(10)->create();
     }
 }
