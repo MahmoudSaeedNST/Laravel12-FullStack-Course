@@ -5,10 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\PostRequest;
 use App\Http\Resources\PostResource;
 use App\Models\Post;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
+
+    use AuthorizesRequests;
+    public $posts = [];
     public function addcomment(Request $request, string $id){
         $data = $request->validate([
             'content' => 'required|string',
@@ -33,6 +37,8 @@ class PostController extends Controller
      */
     public function index()
     {
+        $this->authorize('viewAny', Post::class);
+
         $posts = Post::with('comments')->get();
         return response()->json($posts);
         /* return PostResource::collection($posts)->additional([
@@ -82,6 +88,8 @@ class PostController extends Controller
      */
     public function update(PostRequest $request, string $id)
     {
+        $this->authorize('update', Post::class);
+
         // validation
         $data = $request->validated();
         $selectedpost = array_filter($this->posts, function ($filterdpost) use ($id) {
@@ -101,6 +109,8 @@ class PostController extends Controller
      */
     public function destroy(string $id)
     {
+        $this->authorize('delete', Post::class);
+        
         $this->posts = array_filter($this->posts, function ($filterdpost) use ($id) {
             return $filterdpost['id'] != $id; // ignore the post with the id
         });

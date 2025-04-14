@@ -133,3 +133,33 @@ Route::post('posts/{id}/comments', [PostController::class, 'addcomment']);
 
 Route::post('users/{id}/roles', [RoleController::class, 'store']);
 Route::get('roles', [RoleController::class, 'index']);
+
+/**
+ * Route: GET /user-role
+ * 
+ * This route checks if a user with ID 13 has the 'editor' role.
+ * 
+ * @return \Illuminate\Http\JsonResponse
+ * - If the user does not have the 'editor' role:
+ *   - HTTP Status: 403 (Forbidden)
+ *   - Response: JSON object containing a message and the user's roles.
+ * - If the user has the 'editor' role:
+ *   - HTTP Status: 200 (OK)
+ *   - Response: JSON object containing a message and the user's roles.
+ * 
+ * Note: Ensure that the User model and the `hasRole` method are properly defined 
+ * and that the necessary role-based access control logic is implemented.
+ */
+Route::get('user-role', function(){
+    $user = User::find(13);
+    if (!$user->hasRole('editor')) {
+        return response()->json([
+            'message' => 'You are not authorized to edit posts.',
+            'data' => $user->roles
+        ], 403);
+    }
+    return response()->json([
+        'message' => 'You are authorized to edit posts.',
+        'data' => $user->roles
+    ]);
+});
