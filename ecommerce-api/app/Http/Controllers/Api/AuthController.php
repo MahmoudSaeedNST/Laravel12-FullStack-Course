@@ -43,7 +43,10 @@ class AuthController extends Controller
             'password' => 'required|string|min:8',
         ]);
         // check if the user exists
-        $user = User::where('email', $data['email'])->findOrFail();
+        $user = User::where('email', $data['email'])->first();
+        if (!$user) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
         // check if the password is correct
         if (!Hash::check($data['password'], $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
