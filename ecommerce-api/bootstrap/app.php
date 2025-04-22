@@ -3,6 +3,9 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureUserIsCustomer;
+use App\Http\Middleware\EnsureUserIsDelivery;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,7 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // register middleware with alias
+        $middleware->alias([
+            'isAdmin' => EnsureUserIsAdmin::class,
+            'isCustomer' => EnsureUserIsCustomer::class,
+            'isDelivery' => EnsureUserIsDelivery::class,
+        ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
