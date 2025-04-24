@@ -16,5 +16,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/token', [AuthController::class, 'getAccessToken']);
 }); */
 
+Route::get('/products', function (Request $request) {
+    return response()->json(['message' => 'List of products']);
+})->middleware(['auth:sanctum', 'permission:view products']);
 
-include_once __DIR__.'/auth.php';
+include_once __DIR__ . '/auth.php';
