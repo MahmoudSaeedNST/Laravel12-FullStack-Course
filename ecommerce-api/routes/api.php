@@ -1,23 +1,14 @@
 <?php
 
-use App\Http\Controllers\Api\Auth\AdminAuthController;
-use App\Http\Controllers\Api\Auth\CustomerAuthController;
-use App\Http\Controllers\Api\Auth\DeliveryAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use \App\Http\Controllers\Api\AuthController;
 
-/* Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+use App\Http\Controllers\Api\ProductController;
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
-    Route::get('/token', [AuthController::class, 'getAccessToken']);
-}); */
+Route::apiResource('products', ProductController::class)->only(['index', 'show']);
 
-Route::get('/products', function (Request $request) {
-    return response()->json(['message' => 'List of products']);
-})->middleware(['auth:sanctum', 'permission:view products']);
+Route::middleware(['auth:sanctum', 'permission:create products'])->group(function () {
+   Route::apiResource('products', ProductController::class)->except(['index', 'show']); // don't include index and show routes
+});
 
 include_once __DIR__ . '/auth.php';
