@@ -14,8 +14,28 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+
+        // get all products (default)
         $products = Product::all();
+
+        // is active products only (default)
+        //$products = Product::where('is_active', true)->get();
+
+        // with global scope
+        //$products = Product::all(); // all records from the products table filtered by global scope is active
+
+        // without global scope
+        //$products = Product::withoutGlobalScope('active')->get(); // all records from the products table without global scope
+
+
+
+        // get products between 5 and 40 usage of local scope
+        // $products = Product::priceBetween(5, 40)->get(); 
+
+        // formatted name attribute (accessor)
+        // $product = Product::first();
+        // return $product->formatted_name;
+
         return response()->json([
             'success' => true,
             'message' => 'Products retrieved successfully',
@@ -108,6 +128,82 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Product deleted successfully',
+        ], 200);
+    }
+
+    // undo soft delete
+    public function undoDelete(Request $request, Product $product)
+    {
+        if ($request->user()->hasRole('admin')) {
+            $product->restore();
+            return response()->json([
+                'success' => true,
+                'message' => 'Product restored successfully',
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not authorized to perform this action',
+        ], 403);
+    }
+    // permanent delete
+    public function permanentDelete(Request $request, Product $product)
+    {
+        if ($request->user()->hasRole('admin')) {
+            $product->forceDelete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Product permanently deleted successfully',
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not authorized to perform this action',
+        ], 403);
+    }
+
+    // index of admin products
+    public function adminIndex(Request $request)
+    {
+        // get all products (default)
+
+        $products = Product::withTrashed()->get();
+
+        if ($request->user()->hasRole('admin')) {
+            $products = Product::withTrashed()->get();
+            return response()->json([
+                'success' => true,
+                'message' => 'Products retrieved successfully',
+                'data' => $products
+            ], 200);
+        }
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not authorized to perform this action',
+        ], 403);
+    }
+
+    // filter products by name, description, price
+    public function filter(Request $request)
+    {
+        $products = Product::query()
+        ->when($request->price_min, fn($query) =>
+            $query->where('price', '>=', $request->price_min))
+        ->when($request->price_max, fn($query) => 
+            $query->where('price', '<=', $request->price_max))
+        ->when($request->q, function($query) use ($request){
+            $query->where(fn($query) =>
+                $query->where('name', 'like', "%{$request->q}%")
+                ->orWhere('description', 'like', "%{$request->q}%")
+            );
+        })->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Products retrieved successfully',
+            'data' => $products
         ], 200);
     }
 }
