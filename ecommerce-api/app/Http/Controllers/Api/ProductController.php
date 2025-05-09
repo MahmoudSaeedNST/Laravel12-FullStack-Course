@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -15,8 +17,11 @@ class ProductController extends Controller
     public function index()
     {
 
-        // eager loading categories
-        $products = Product::with('categories')->get();
+        // eager loading categories wiht products caching
+        // cache for 300 seconds (5 minutes)
+        $products = Cache::remember('products', 300, function () {
+            return Product::with('categories')->get();
+        });
         /*
          [
             {
@@ -74,6 +79,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+
         // validate the request
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -84,12 +90,23 @@ class ProductController extends Controller
             'sku' => 'required|string|max:255|unique:products',
             'is_active' => 'boolean',
             'categories' => 'array',
-            'categories.*' => 'exists:categories,id'
+            'categories.*' => 'exists:categories,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048' // 2MB
         ]);
+        // check if image uploaded
+        if ($request->hasFile('image')) {
+            // store the image with random name
+            //$data['image'] = $request->file('image')->store('products', 'public');
+            // store the image with product slug
+            $data['image'] = $request->file('image')->storeAs('products', $data['slug'], 'public');
+        }
         // create the product
         $product = Product::create($data);
+
+
+
         // attach categories
-        if($request->has('categories')) {
+        if ($request->has('categories')) {
             $product->categories()->attach($data['categories']);
         }
         $product->load('categories');
@@ -116,6 +133,8 @@ class ProductController extends Controller
                 }
             ]
          */
+
+        Cache::forget('products'); // clear the cache
         // return the product
         return response()->json([
             'success' => true,
@@ -129,12 +148,39 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        //
+        // eager load categories with product caching
+        $productCached = Cache::remember('product_' . $product->id, 300, function () use ($product) {
+            return $product->load('categories');
+        });
         return response()->json([
             'success' => true,
             'message' => 'Product retrieved successfully',
-            'data' => $product
+            'data' => $productCached
         ], 200);
+        /*
+        {
+            "id": 1,
+            "name": "Product 1",
+            "slug": "product-1",
+            "description": "Product 1 description",
+            "price": 10.00,
+            "stock": 10,
+            "sku": "SKU-001",
+            "is_active": true,
+
+            "categories": [
+                {
+                    "id": 1,
+                    "name": "Category 1",
+                    "slug": "category-1"
+                },
+                {
+                    "id": 2,
+                    "name": "Category 2",
+                    "slug": "category-2"
+                }
+            ]
+         */
     }
 
     /**
@@ -152,7 +198,8 @@ class ProductController extends Controller
             'sku' => 'sometimes|required|string|max:255|unique:products,sku,' . $product->id,
             'is_active' => 'sometimes|boolean',
             'categories' => 'sometimes|array',
-            'categories.*' => 'sometimes|exists:categories,id'
+            'categories.*' => 'sometimes|exists:categories,id',
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg|max:2048' // 2MB
         ]);
 
         if ($request->has('name')) {
@@ -165,6 +212,13 @@ class ProductController extends Controller
         if ($request->has('sku')) $product->sku = $request->sku;
         if ($request->has('is_active')) $product->is_active = $request->is_active;
 
+        // check if image uploaded
+        if ($request->hasFile('image')) {
+            // store the image with random name
+            // $product->image = $request->file('image')->store('products', 'public');
+            // store the image with product slug
+            $product->image = $request->file('image')->storeAs('products', $product->slug, 'public');
+        }
         // update the product
         $product->save();
 
@@ -199,6 +253,10 @@ class ProductController extends Controller
             ]
          */
 
+        // clear the cache
+        Cache::forget('product_' . $product->id);
+        Cache::forget('products'); // clear the cache
+
         // return the product
         return response()->json([
             'success' => true,
@@ -212,8 +270,22 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        // delete the product vs soft delete
+        // if the product has image, delete it
+        if ($product->image) {
+            // delete the image from storage
+            // $product->image has the root path
+            // $product->image = 'products/1.jpg'
+            Storage::disk('public')->delete($product->image);
+        }
+
+        // clear the cache
+        Cache::forget('product_' . $product->id);
+        Cache::forget('products'); // clear the cache
+        
         $product->delete();
+
+
+
         return response()->json([
             'success' => true,
             'message' => 'Product deleted successfully',
@@ -278,16 +350,17 @@ class ProductController extends Controller
     public function filter(Request $request)
     {
         $products = Product::query()
-        ->when($request->price_min, fn($query) =>
+            ->when($request->price_min, fn($query) =>
             $query->where('price', '>=', $request->price_min))
-        ->when($request->price_max, fn($query) => 
+            ->when($request->price_max, fn($query) =>
             $query->where('price', '<=', $request->price_max))
-        ->when($request->q, function($query) use ($request){
-            $query->where(fn($query) =>
-                $query->where('name', 'like', "%{$request->q}%")
-                ->orWhere('description', 'like', "%{$request->q}%")
-            );
-        })->get();
+            ->when($request->q, function ($query) use ($request) {
+                $query->where(
+                    fn($query) =>
+                    $query->where('name', 'like', "%{$request->q}%")
+                        ->orWhere('description', 'like', "%{$request->q}%")
+                );
+            })->get();
 
         return response()->json([
             'success' => true,

@@ -20,6 +20,7 @@ class Product extends Model
         'stock',
         'sku',
         'is_active',
+        'image'
     ];
 
     // is stock available
@@ -50,5 +51,12 @@ class Product extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(Category::class, 'category_product');
+    }
+
+    // get image url attribute (image_url)
+    public function getImageUrlAttribute()
+    {
+        // hexaora.com/storage/products/1.jpg
+        return $this->image ? asset('storage/' . $this->image) : null;
     }
 }
