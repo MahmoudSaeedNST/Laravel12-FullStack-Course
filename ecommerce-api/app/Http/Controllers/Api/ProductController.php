@@ -15,8 +15,34 @@ class ProductController extends Controller
     public function index()
     {
 
-        // get all products (default)
-        $products = Product::all();
+        // eager loading categories
+        $products = Product::with('categories')->get();
+        /*
+         [
+            {
+                "id": 1,
+                "name": "Product 1",
+                "slug": "product-1",
+                "description": "Product 1 description",
+                "price": 10.00,
+                "stock": 10,
+                "sku": "SKU-001",
+                "is_active": true,
+                "categories": [
+                    {
+                        "id": 1,
+                        "name": "Category 1",
+                        "slug": "category-1"
+                    },
+                    {
+                        "id": 2,
+                        "name": "Category 2",
+                        "slug": "category-2"
+                    }
+                ]
+            }
+        ] 
+         */
 
         // is active products only (default)
         //$products = Product::where('is_active', true)->get();
@@ -56,10 +82,40 @@ class ProductController extends Controller
             'price' => 'required|numeric|min:0',
             'stock' => 'integer|min:0',
             'sku' => 'required|string|max:255|unique:products',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'categories' => 'array',
+            'categories.*' => 'exists:categories,id'
         ]);
         // create the product
         $product = Product::create($data);
+        // attach categories
+        if($request->has('categories')) {
+            $product->categories()->attach($data['categories']);
+        }
+        $product->load('categories');
+        /* 
+        {
+            "id": 1,
+            "name": "Product 1",
+            "slug": "product-1",
+            "description": "Product 1 description",
+            "price": 10.00,
+            "stock": 10,
+            "sku": "SKU-001",
+            "is_active": true,
+            "categories": [
+                {
+                    "id": 1,
+                    "name": "Category 1",
+                    "slug": "category-1"
+                },
+                {
+                    "id": 2,
+                    "name": "Category 2",
+                    "slug": "category-2"
+                }
+            ]
+         */
         // return the product
         return response()->json([
             'success' => true,
@@ -94,7 +150,9 @@ class ProductController extends Controller
             'price' => 'sometimes|required|numeric|min:0',
             'stock' => 'sometimes|integer|min:0',
             'sku' => 'sometimes|required|string|max:255|unique:products,sku,' . $product->id,
-            'is_active' => 'sometimes|boolean'
+            'is_active' => 'sometimes|boolean',
+            'categories' => 'sometimes|array',
+            'categories.*' => 'sometimes|exists:categories,id'
         ]);
 
         if ($request->has('name')) {
@@ -109,6 +167,37 @@ class ProductController extends Controller
 
         // update the product
         $product->save();
+
+        // sync categories
+        if ($request->has('categories')) {
+            $product->categories()->sync($request->categories);
+        }
+
+        // load the categories
+        $product->load('categories');
+        /*
+        {
+            "id": 1,
+            "name": "Product 1",
+            "slug": "product-1",
+            "description": "Product 1 description",
+            "price": 10.00,
+            "stock": 10,
+            "sku": "SKU-001",
+            "is_active": true,
+            "categories": [
+                {
+                    "id": 1,
+                    "name": "Category 1",
+                    "slug": "category-1"
+                },
+                {
+                    "id": 2,
+                    "name": "Category 2",
+                    "slug": "category-2"
+                }
+            ]
+         */
 
         // return the product
         return response()->json([

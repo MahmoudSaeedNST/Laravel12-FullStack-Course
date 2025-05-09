@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
@@ -48,5 +49,10 @@ class Category extends Model
         // parent_id = null = top level category = parent
         // not top level category = child
         // parent_id = 1
+    }
+
+    public function products(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'category_product');
     }
 }
