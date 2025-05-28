@@ -4,8 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CheckoutController;
 
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
 
@@ -21,6 +22,20 @@ Route::middleware(['auth:sanctum', 'permission:create categories'])->group(funct
 Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function () {
    Route::apiResource('cart', CartController::class)->except(['show']); // don't include index and show routes
 });
+
+
+Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function () {
+
+   // handle orders
+   Route::post('/checkout', [CheckoutController::class, 'checkout']);
+   Route::get('/orders', [CheckoutController::class, 'orderHistory']);
+   Route::get('/orders/{orderId}', [CheckoutController::class, 'orderDetails']);
+
+   // handle payment
+   Route::get('/payment/proccess/{order}/{provider}', [PaymentController::class, 'paymentProcess']);
+});
+
+
 
 Route::get('/categories/{category}/products', [CategoryController::class, 'products']);
 

@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Models\Cart;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class CartController extends Controller
 {
@@ -15,7 +16,7 @@ class CartController extends Controller
        // get authenticated user
        $user = $request->user();
        // get user's cart items
-       $cartItems = Cart::weher('user_id', $user->id)->with('product')->get();
+       $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
        // get total of cart items
         $total = $cartItems->sum(function ($item) {
               return $item->product->price * $item->quantity;
@@ -25,7 +26,7 @@ class CartController extends Controller
             'suscess' => true,
             'message' => 'Cart items retrieved successfully',
             'cart' => $cartItems,
-            'total' => $total,
+            'total' => round($total, 2),
          ]);
     }
 

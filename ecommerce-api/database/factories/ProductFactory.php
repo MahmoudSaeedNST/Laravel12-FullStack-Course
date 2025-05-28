@@ -2,30 +2,26 @@
 
 namespace Database\Factories;
 
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Product>
- */
 class ProductFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
-    public function definition(): array
+    protected $model = Product::class;
+
+    public function definition()
     {
+        $name = $this->faker->words(2, true);
         return [
-            'name' => $this->faker->word(),
-            'slug' => $this->faker->slug(),
-            'description' => $this->faker->paragraph(),
-            'price' => $this->faker->randomFloat(2, 1, 100),
+            'name' => ucfirst($name),
+            'slug' => Str::slug($name),
+            'description' => $this->faker->sentence(10),
+            'price' => $this->faker->randomFloat(2, 10, 2000),
             'stock' => $this->faker->numberBetween(0, 100),
-            'sku' => $this->faker->unique()->word(),
-            'is_active' => $this->faker->boolean(),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'sku' => strtoupper(Str::random(8)),
+            'is_active' => $this->faker->boolean(90),
+            'image' => null,
         ];
     }
 }

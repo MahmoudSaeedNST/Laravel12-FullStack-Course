@@ -3,12 +3,12 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Product;
+use App\Models\Cart;
 
-class ProductSeeder extends Seeder
+class CartSeeder extends Seeder
 {
     public function run(): void
     {
-        Product::factory(20)->create();
+        Cart::factory(20)->create();
     }
 }

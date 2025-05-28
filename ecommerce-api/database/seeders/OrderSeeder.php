@@ -3,12 +3,12 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Product;
+use App\Models\Order;
 
-class ProductSeeder extends Seeder
+class OrderSeeder extends Seeder
 {
     public function run(): void
     {
-        Product::factory(20)->create();
+        Order::factory(10)->create();
     }
 }
