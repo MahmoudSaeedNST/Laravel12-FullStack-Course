@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\PaymentController;
 
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
 
@@ -32,7 +33,7 @@ Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function 
    Route::get('/orders/{orderId}', [CheckoutController::class, 'orderDetails']);
 
    // handle payment
-   Route::get('/payment/proccess/{order}/{provider}', [PaymentController::class, 'paymentProcess']);
+   
 });
 
 

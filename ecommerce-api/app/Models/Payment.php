@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-     protected $fillable = [
+    //attributes
+    protected $fillable = [
         'order_id',
         'user_id',
         'provider',
-        'session_id',
         'payment_intent_id',
         'amount',
         'currency',
@@ -20,13 +20,17 @@ class Payment extends Model
         'metadata',
         'completed_at'
     ];
+
+    //casts
     protected $casts = [
-        'provider' => PaymentProvider::class,
-        'status' => PaymentStatus::class,
         'metadata' => 'array',
         'completed_at' => 'datetime',
+        'amount' => 'decimal:2',
+        'provider' => PaymentProvider::class,
+        'status' => PaymentStatus::class,
     ];
 
+    // defining relationships
     public function order()
     {
         return $this->belongsTo(Order::class);
@@ -36,27 +40,41 @@ class Payment extends Model
         return $this->belongsTo(User::class);
     }
 
-    // mark as completed
-    public function markAsCompleted($paymentIntentId, $metadata){
+    // marke as completed
+    public function markAsCompleted($paymentIntentId, $metadata = [])
+    {
+        // arry1 = ['ky1' => 'value1', 'key2' => 'value2']
+        // array2 = ['key2' => 'value overrited', 'key3' => 'value3', 'key4' => 'value4']
+        // array_merge(array1, array2) = ['key1' => 'value1', 'key2' => 'value overrited', 'key3' => 'value3', 'key4' => 'value4']
         $this->update([
             'status' => PaymentStatus::COMPLETED,
             'payment_intent_id' => $paymentIntentId,
-            'metadata' => array_merge($this->metadata ?? [], $metadata),
             'completed_at' => now(),
+            'metadata' => array_merge($this->metadata ?? [], $metadata)
+
         ]);
 
-        // Update the order status to paid
         $this->order->markAsPaid($paymentIntentId);
     }
 
     // mark as failed
-    public function markAsFailed($metadata){
+    public function markAsFailed($metadata = [])
+    {
         $this->update([
             'status' => PaymentStatus::FAILED,
-            'metadata' => array_merge($this->metadata ?? [], $metadata),
+            'metadata' => array_merge($this->metadata ?? [], $metadata)
         ]);
 
-        $this->order->markAsPaymentFailed();
+        $this->order->markAsFailed();
     }
 
+    // is fianl
+    public function isFinal()
+    {
+        return in_array($this->status, [
+            PaymentStatus::COMPLETED,
+            PaymentStatus::FAILED,
+            PaymentStatus::REFUNDED,
+        ]);
+    }
 }
