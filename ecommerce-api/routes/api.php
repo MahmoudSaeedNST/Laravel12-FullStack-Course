@@ -33,8 +33,15 @@ Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function 
    Route::get('/orders/{orderId}', [CheckoutController::class, 'orderDetails']);
 
    // handle payment
-   
+   // Create payment (Stripe or other providers in the future)
+   Route::post('/orders/{order}/payments', [PaymentController::class, 'createPayment']);
+
+   // Confirm payment status
+   Route::get('/payments/{paymentId}/confirm', [PaymentController::class, 'confirmPayment']);
 });
+
+// Webhook endpoints (no authentication required)
+Route::post('/webhooks/stripe', [PaymentController::class, 'stripeWebhook']);
 
 
 

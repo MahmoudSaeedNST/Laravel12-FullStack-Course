@@ -14,6 +14,8 @@ class Payment extends Model
         'user_id',
         'provider',
         'payment_intent_id',
+        'paypal_order_id',
+        'paypal_capture_id',
         'amount',
         'currency',
         'status',
@@ -55,6 +57,18 @@ class Payment extends Model
         ]);
 
         $this->order->markAsPaid($paymentIntentId);
+    }
+    // mark as completed for PayPal
+    public function markAsCompletedPayPal(string $paypalCaptureId, array $metadata = [])
+    {
+        $this->update([
+            'status' => PaymentStatus::COMPLETED,
+            'paypal_capture_id' => $paypalCaptureId,
+            'completed_at' => now(),
+            'metadata' => array_merge($this->metadata ?? [], $metadata)
+        ]);
+
+        $this->order->markAsPaid($paypalCaptureId);
     }
 
     // mark as failed
