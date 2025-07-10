@@ -11,13 +11,21 @@ use App\Http\Controllers\Api\PaymentController;
 
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
 
+// Product filtering endpoint
+Route::get('/products/filter', [ProductController::class, 'filter']);
+
 Route::middleware(['auth:sanctum', 'permission:create products'])->group(function () {
    Route::apiResource('products', ProductController::class)->except(['index', 'show']); // don't include index and show routes
+   
+   // Admin specific product routes
+   Route::get('/products/admin', [ProductController::class, 'adminIndex']);
+   Route::post('/products/{product}/restore', [ProductController::class, 'undoDelete']);
+   Route::delete('/products/{product}/permanent', [ProductController::class, 'permanentDelete']);
 });
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 
 Route::middleware(['auth:sanctum', 'permission:create categories'])->group(function () {
-   Route::apiResource('categories', ProductController::class)->except(['index', 'show']); // don't include index and show routes
+   Route::apiResource('categories', CategoryController::class)->except(['index', 'show']); // don't include index and show routes
 });
 
 Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function () {
@@ -30,7 +38,7 @@ Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function 
    // handle orders
    Route::post('/checkout', [CheckoutController::class, 'checkout']);
    Route::get('/orders', [CheckoutController::class, 'orderHistory']);
-   Route::get('/orders/{orderId}', [CheckoutController::class, 'orderDetails']);
+   Route::get('/orders/{id}', [CheckoutController::class, 'orderDetails']);
 
    // handle payment
    // Create payment (Stripe or other providers in the future)

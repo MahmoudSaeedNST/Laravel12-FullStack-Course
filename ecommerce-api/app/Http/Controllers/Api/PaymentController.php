@@ -135,7 +135,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function stripWebhook(Request $request)
+    public function stripeWebhook(Request $request)
     {
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
