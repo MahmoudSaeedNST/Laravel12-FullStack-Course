@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enum\OrderStatus;
 use App\Enum\PaymentStatus;
+use Illuminate\Container\Attributes\Auth;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
@@ -49,6 +50,50 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function statusHistory()
+    {
+        return $this->hasMany(OrderStatusHistory::class)->latest();
+    }
+
+    public function transitionTo(OrderStatus $newStatus, ?User $changedBy = null, ?string $notes = null)
+    {
+       // don't allow transition to the same status
+       if($this->status === $newStatus) {
+            return true;
+        }
+
+        if(!$this->status->canTransitionTo($newStatus)) {
+            return false;
+        }
+
+        // store old status
+        $oldStatus = $this->status; // current status
+        // update the order status
+        $this->update(['status' => $newStatus]);
+
+        $this->statusHistory()->create([
+            'order_id' => $this->id,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'changed_by' => $changedBy?->id ?? Auth::id(), // use the authenticated user or null
+            'notes' => $notes,
+        ]);
+
+        return true;
+    }
+
+    // get allowed transitions for the current status
+    public function getAllowedTransitions(): array
+    {
+        return $this->status->getAllowedTransitions();
+    }
+
+    public function getLatestStatusChange()
+    {
+        return $this->statusHistory()->first();
+    }
+
     // generate a unique order number
     public static function generateOrderNumber()
     {
@@ -95,5 +140,6 @@ class Order extends Model
         return $this->payment_status === PaymentStatus::PENDING || 
                $this->payment_status === PaymentStatus::FAILED;
     }
+
     
 }

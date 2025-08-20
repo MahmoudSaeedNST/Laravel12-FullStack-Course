@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\OrderManagementController;
 use App\Http\Controllers\Api\PaymentController;
 
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
@@ -51,8 +52,16 @@ Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function 
 // Webhook endpoints (no authentication required)
 Route::post('/webhooks/stripe', [PaymentController::class, 'stripeWebhook']);
 
-
-
 Route::get('/categories/{category}/products', [CategoryController::class, 'products']);
+
+// Admin-only order management routes
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    // Order management endpoints
+    Route::get('/admin/orders', [OrderManagementController::class, 'index']);
+    Route::get('/admin/orders/{order}', [OrderManagementController::class, 'show']);
+    Route::patch('/admin/orders/{order}/status', [OrderManagementController::class, 'updateStatus']);
+    Route::post('/admin/orders/{order}/cancel', [OrderManagementController::class, 'cancel']);
+});
+
 
 include_once __DIR__ . '/auth.php';
