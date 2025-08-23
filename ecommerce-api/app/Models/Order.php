@@ -4,11 +4,15 @@ namespace App\Models;
 
 use App\Enum\OrderStatus;
 use App\Enum\PaymentStatus;
+use App\Events\OrderStatusChanged;
 use Illuminate\Container\Attributes\Auth;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class Order extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'user_id',
         'status',
@@ -58,14 +62,14 @@ class Order extends Model
 
     public function transitionTo(OrderStatus $newStatus, ?User $changedBy = null, ?string $notes = null)
     {
-       // don't allow transition to the same status
-       if($this->status === $newStatus) {
+        // don't allow transition to the same status
+        /* if ($this->status === $newStatus) {
             return true;
         }
 
-        if(!$this->status->canTransitionTo($newStatus)) {
+        if (!$this->status->canTransitionTo($newStatus)) {
             return false;
-        }
+        } */
 
         // store old status
         $oldStatus = $this->status; // current status
@@ -74,11 +78,18 @@ class Order extends Model
 
         $this->statusHistory()->create([
             'order_id' => $this->id,
-            'old_status' => $oldStatus,
-            'new_status' => $newStatus,
+            'from_status' => $oldStatus,
+            'to_status' => $newStatus,
             'changed_by' => $changedBy?->id ?? Auth::id(), // use the authenticated user or null
             'notes' => $notes,
         ]);
+
+    
+        OrderStatusChanged::dispatch(
+            $this,
+            $oldStatus->value,
+            $changedBy?->name ?? Auth::user()?->name
+        );
 
         return true;
     }
@@ -104,7 +115,8 @@ class Order extends Model
         return "ORD-{$year}-{$randomNumber}"; // e.g., ORD-2025-ABC123
     }
 
-     public function canBeCancelled() {
+    public function canBeCancelled()
+    {
         return in_array($this->status, [
             OrderStatus::PENDING,
             OrderStatus::PAID,
@@ -114,7 +126,7 @@ class Order extends Model
     // mark as paid
     public function markAsPaid($transactionId)
     {
-       $this->update([
+        $this->update([
             'status' => OrderStatus::PAID,
             'payment_status' => PaymentStatus::COMPLETED,
             'transaction_id' => $transactionId,
@@ -137,9 +149,7 @@ class Order extends Model
      */
     public function canAcceptPayment(): bool
     {
-        return $this->payment_status === PaymentStatus::PENDING || 
-               $this->payment_status === PaymentStatus::FAILED;
+        return $this->payment_status === PaymentStatus::PENDING ||
+            $this->payment_status === PaymentStatus::FAILED;
     }
-
-    
 }

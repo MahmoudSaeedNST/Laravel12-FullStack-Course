@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Enum\PaymentProvider;
 use App\Enum\PaymentStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
+    use HasFactory;
     //attributes
     protected $fillable = [
         'order_id',

@@ -15,6 +15,7 @@ class CheckPermission
      */
     public function handle(Request $request, Closure $next, $permission): Response
     {
+
         if(!$request->user() || !$request->user()->hasPermissionTo($permission)) {
             return response()->json(['message' => 'You do not have permission to access this resource.'], 403);
         }

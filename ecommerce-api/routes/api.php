@@ -9,6 +9,18 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\OrderManagementController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Models\Order;
+
+Route::get('/test-broadcast/{order}', function(Order $order) {
+    \App\Events\OrderStatusChanged::dispatch(
+        $order,
+        'pending',
+        'Test User'
+    );
+    
+    return response()->json(['message' => 'Event dispatched']);
+});
+
 
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);
 
@@ -55,7 +67,7 @@ Route::post('/webhooks/stripe', [PaymentController::class, 'stripeWebhook']);
 Route::get('/categories/{category}/products', [CategoryController::class, 'products']);
 
 // Admin-only order management routes
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function () {
     // Order management endpoints
     Route::get('/admin/orders', [OrderManagementController::class, 'index']);
     Route::get('/admin/orders/{order}', [OrderManagementController::class, 'show']);

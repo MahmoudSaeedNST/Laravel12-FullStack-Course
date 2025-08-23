@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Enum\OrderStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class OrderStatusHistory extends Model
 {
+    use HasFactory;
     //fillable attributes
     protected $fillable = [
         'order_id',

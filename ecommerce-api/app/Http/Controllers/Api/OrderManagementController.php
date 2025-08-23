@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enum\OrderStatus;
+use App\Events\OrderStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class OrderManagementController extends Controller
 {
@@ -66,7 +69,7 @@ class OrderManagementController extends Controller
 
         return response()->json([
             'order' => $order,
-            'available_transitions' => $order->getAvailableTransitions(),
+            'available_transitions' => $order->getAllowedTransitions(),
         ]);
     }
 
@@ -99,6 +102,7 @@ class OrderManagementController extends Controller
                 'success' => true,
                 'message' => "Order status updated to {$newStatus->getLabel()}",
                 'order' => $order,
+                'available_transitions' => $order->getAllowedTransitions(),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -108,7 +112,7 @@ class OrderManagementController extends Controller
         }
     }
     // cancel
-     /**
+    /**
      * Cancel an order (admin only)
      * 
      * @param Request $request
@@ -138,7 +142,6 @@ class OrderManagementController extends Controller
                 'message' => 'Order has been cancelled',
                 'order' => $order->fresh(['statusHistory.changedBy']),
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

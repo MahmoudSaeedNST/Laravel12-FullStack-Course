@@ -2,7 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Enum\OrderStatus;
+use App\Enum\PaymentProvider;
+use App\Enum\PaymentStatus;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -12,7 +16,7 @@ class OrderFactory extends Factory
 
     public function definition()
     {
-        $status = $this->faker->randomElement(['pending', 'paid', 'shipped', 'cancelled']);
+        $status = $this->faker->randomElement(OrderStatus::values());
         return [
             'user_id' => User::factory(),
             'status' => $status,
@@ -27,8 +31,8 @@ class OrderFactory extends Factory
             'tax' => $this->faker->randomFloat(2, 0, 200),
             'shipping_cost' => $this->faker->randomFloat(2, 0, 100),
             'total' => $this->faker->randomFloat(2, 20, 2200),
-            'payment_method' => $this->faker->randomElement(['cod', 'card', 'paypal']),
-            'payment_status' => $this->faker->randomElement(['pending', 'paid', 'failed']),
+            'payment_method' => $this->faker->randomElement(PaymentProvider::values()),
+            'payment_status' => $this->faker->randomElement(PaymentStatus::values()),
             'order_number' => Order::generateOrderNumber(),
             'notes' => $this->faker->optional()->sentence(),
         ];

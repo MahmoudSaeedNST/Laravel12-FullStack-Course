@@ -44,6 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit products',
             'delete products',
             'view orders',
+            'create orders',
             'update orders',
             'cancel orders',
             'view users',
