@@ -10,6 +10,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class OrderStatusChanged implements ShouldBroadcast
 {
@@ -21,11 +22,11 @@ class OrderStatusChanged implements ShouldBroadcast
     public function __construct(
         public Order $order,
         public ?string $previousStatus = null,
-        public ?string $changedBy = null,
+        public ?string $changedBy = null
     )
     {
+        //
         $this->order->load(['user', 'items.product']);
-
     }
 
     /**
@@ -36,11 +37,11 @@ class OrderStatusChanged implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            // Each customer listens to their own orders
+            // Each customer listens to their own orders user.1.orders , user.2.orders
             new PrivateChannel('user.' . $this->order->user_id . '.orders'),
 
-            // admin listens to all orders
-            new Channel('admin.orders'),
+            // Admins can listen globally admin.orders
+            new PrivateChannel('admin.orders'),
         ];
     }
 
@@ -51,7 +52,7 @@ class OrderStatusChanged implements ShouldBroadcast
 
     public function broadcastWith(): array
     {
-         return [
+        $broadcastData = [
             'order_id' => $this->order->id,
             'order_number' => $this->order->order_number,
             'current_status' => $this->order->status->value,
@@ -71,5 +72,9 @@ class OrderStatusChanged implements ShouldBroadcast
                 'quantity' => $item->quantity,
             ])->toArray(),
         ];
+
+        // add logs to the broadcast data
+        Log::info('Broadcasting order status change: ' . json_encode($broadcastData));
+        return $broadcastData;
     }
 }

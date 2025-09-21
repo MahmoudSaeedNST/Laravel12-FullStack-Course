@@ -11,15 +11,6 @@ use App\Http\Controllers\Api\OrderManagementController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Models\Order;
 
-Route::get('/test-broadcast/{order}', function(Order $order) {
-    \App\Events\OrderStatusChanged::dispatch(
-        $order,
-        'pending',
-        'Test User'
-    );
-    
-    return response()->json(['message' => 'Event dispatched']);
-});
 
 
 Route::apiResource('products', ProductController::class)->only(['index', 'show']);

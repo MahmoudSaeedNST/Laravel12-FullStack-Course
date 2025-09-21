@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Product;
+use App\Notifications\OrderConfirmationNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -105,6 +106,10 @@ class CheckoutController extends Controller
                 $cartItem->delete();
             });
             DB::commit();
+
+            // Send the order confirmation email
+            $order->user->notify(new OrderConfirmationNotification($order));
+            // Return the response
             response()
                 ->json([
                     'message' => 'Order placed successfully',

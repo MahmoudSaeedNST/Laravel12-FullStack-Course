@@ -8,7 +8,6 @@ use App\Events\OrderStatusChanged;
 use Illuminate\Container\Attributes\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Log;
 
 class Order extends Model
 {
@@ -34,7 +33,6 @@ class Order extends Model
         'order_number',
         'notes',
         'transaction_id',
-        'paid_at',
     ];
 
     protected $casts = [
@@ -63,13 +61,13 @@ class Order extends Model
     public function transitionTo(OrderStatus $newStatus, ?User $changedBy = null, ?string $notes = null)
     {
         // don't allow transition to the same status
-        /* if ($this->status === $newStatus) {
+        if ($this->status === $newStatus) {
             return true;
         }
 
         if (!$this->status->canTransitionTo($newStatus)) {
             return false;
-        } */
+        }
 
         // store old status
         $oldStatus = $this->status; // current status
@@ -84,13 +82,14 @@ class Order extends Model
             'notes' => $notes,
         ]);
 
-    
+        // dispatch OrderStatusChanged event
         OrderStatusChanged::dispatch(
             $this,
             $oldStatus->value,
-            $changedBy?->name ?? Auth::user()?->name
+            $changedBy?->name ?? Auth::user()->name,
         );
-
+       
+        
         return true;
     }
 
