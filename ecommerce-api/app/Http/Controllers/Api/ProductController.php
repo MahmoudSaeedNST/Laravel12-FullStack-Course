@@ -8,20 +8,39 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProductController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
 
         // eager loading categories wiht products caching
         // cache for 300 seconds (5 minutes)
-        $products = Cache::remember('products', 300, function () {
+        /*  $products = Cache::remember('products', 300, function () {
             return Product::with('categories')->get();
-        });
+        }); */
+
+        $query = Product::with('categories');
+
+        // search filter
+        if ($request->filled('search')) {
+            $search = $request->search; // keyword
+            // search by name and description and sku
+            $query->where(function (Builder $query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        // pagination
+        $per_page = $request->get('per_page', 9);
+        $products = $query->paginate($per_page);
+
         /*
          [
             {
@@ -70,7 +89,11 @@ class ProductController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Products retrieved successfully',
-            'data' => $products
+            'data' => $products,
+            'links' => [
+                'next' => $products->nextPageUrl(),
+                'prev' => $products->previousPageUrl(),
+            ]
         ], 200);
     }
 
@@ -281,7 +304,7 @@ class ProductController extends Controller
         // clear the cache
         Cache::forget('product_' . $product->id);
         Cache::forget('products'); // clear the cache
-        
+
         $product->delete();
 
 
